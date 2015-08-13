@@ -1,0 +1,219 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><!--DVID=00014EAA-->
+<HTML>
+<head>
+<link rel="shortcut icon" type="image/png" href="https://dl.dropboxusercontent.com/u/23155150/Xbee.ico"/>
+<title>Smart Home Project</title>
+<style type="text/css">
+<!--
+#tabs {/*Thanh ngang duoi 4 tab*/
+	border-bottom: .4em solid #1717c6;
+	margin: 0;
+	padding: 0;
+}
+#tabs li { 
+	display:inline; 
+	border-top: .1em solid #0000ff;
+	border-left: .1em solid #0000ff;
+	border-right: .1em solid #0000ff;
+}
+#tabs li a {
+	text-decoration: none;
+	padding: 0.25em 1em;
+	font-weight: bold;
+	color: #ec0000; /*mau chu cua cac trang khac*/
+}
+#index #tabs li#tab1 a, #page2 #tabs li#tab2 a, #page3 #tabs li#tab3 a, #page4 li#tab4 a {
+	padding: 0.25em 1em;
+	background-color: #03c;
+	font-weight: bold;
+	color: #fff;
+}
+body {
+	background-color: #ffffff;
+}
+-->
+</style>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+	<script type="text/javascript">
+	google.load("visualization", '1', {packages:['corechart']});
+	google.load("visualization", '1', {packages:['annotatedtimeline']});
+	google.setOnLoadCallback(drawChart);
+	var count;
+	var numcall =0;//Dem so lan Refresh
+	var dataTemperature ;//Chua du lieu Nhiet do lay ve tu sheet 
+	var options; //Tuy chon cua Chart Nhiet do
+	var chartTemperature; //Chart cua nhiet do
+	var truyvanTemp;//Tao truy van de lay du lieu tu sheet
+	var queryTemperature ;//Truy van cua Nhiet do
+	var timer ;//= setInterval(function(){drawChart()}, 1000);//Ve lai google Map sau moi giay
+	var opts;//tuy chon truy van
+	var call = false;
+	var debug = false;
+	var numClick = 0;
+	var devicesQuery;
+	var dataDevices;
+	function dapungNhiet(responseTemp)
+	{
+				if(debug){alert('Dap ung nhiet')}
+				var newDataTemp = responseTemp.getDataTable();//Lay du lieu tu truy van
+				chartTemperature.draw(newDataTemp, options);
+				count ++;
+	}	
+	function drawChart() {
+		opts = {sendMethod: 'auto'};
+		queryTemperature = new google.visualization.Query(
+		  'https://docs.google.com/spreadsheets/d/1ZDbbt8tHB8dbzxYHqPyTp5x4JBhwdEekB1yqs9CSeug/edit#gid=0',opts);
+		devicesQuery = new google.visualization.Query(
+		  'https://docs.google.com/spreadsheets/d/1ZDbbt8tHB8dbzxYHqPyTp5x4JBhwdEekB1yqs9CSeug/edit#gid=0',opts);
+		devicesQuery.setQuery('select C,D');
+		queryTemperature.setQuery('select A,B');//Chon cot Time va Temperature
+		//queryTemperature.setRefreshInterval(1000); 
+			if(!call)
+			{
+				queryTemperature.send(handleQueryResponse);
+				devicesQuery.send(devicesRespone);
+				call = true;
+			}
+			else
+			{ 
+				if(debug){alert('Dieu kien Else')}
+				numcall++;
+		    //var div = document.getElementById("txtStatus");
+			//div.textContent = numcall.toString();
+			if(call)
+			{
+				if(debug){alert('Call true')}
+				 
+				truyvanTemp = new google.visualization.Query(
+				  'https://docs.google.com/spreadsheets/d/1ZDbbt8tHB8dbzxYHqPyTp5x4JBhwdEekB1yqs9CSeug/edit#gid=0',opts);
+				devicesQuery = new google.visualization.Query(
+				  'https://docs.google.com/spreadsheets/d/1ZDbbt8tHB8dbzxYHqPyTp5x4JBhwdEekB1yqs9CSeug/edit#gid=0',opts);
+				devicesQuery.setQuery('select C,D');
+				truyvanTemp.setQuery('select A,B');//Chon cot A,B de ve	Nhiet do
+				
+				//truyvanTemp.setRefreshInterval(1000); //Refresh sau moi giay
+				truyvanTemp.send(dapungNhiet);
+				devicesQuery.send(devicesRespone);
+				devicesQuery.setRefreshInterval(2000); //Refresh sau moi giay
+			}
+		  }
+		}
+	function devicesRespone(response) 
+	{	
+	    dataDevices = response.getDataTable();//Lay du lieu tu truy van
+		var divice1Status = (dataDevices.getValue(dataDevices.getNumberOfRows()-1,0));
+		var divice2Status = (dataDevices.getValue(dataDevices.getNumberOfRows()-1,dataDevices.getNumberOfColumns()-1));
+		if(divice2Status == "ON")
+		{
+			document.getElementById("btnLightOn").src = "images/Light_ON.png";
+		}
+		else if(divice2Status == "OFF")
+		{
+			document.getElementById("btnLightOn").src = "images/Light_OFF.png";
+		}
+		
+	
+	}
+	function Pause()//Dung truy van de xem zoom
+	{
+		numClick++;
+		//var div = document.getElementById("numClick");
+		///div.textContent = numClick.toString();
+		if(numClick%2==0)
+		{
+		clearInterval(timer);
+		document.getElementById("ibtnRefresh").src = "https://dl.dropboxusercontent.com/u/23155150/Paused.jpg";
+		}
+		else
+		{
+			timer = setInterval(function(){drawChart()}, 5000);//Ve lai google Map sau moi giay
+			document.getElementById("ibtnRefresh").src = "https://dl.dropboxusercontent.com/u/23155150/Processing.jpg";
+		}
+	}
+	function handleQueryResponse(response) {
+
+		options = {
+			  title: 'Temperature Chart',
+			  hAxis: { 
+						title: 'Time',
+						 // here you can even use 180
+						gridlines: {color: '#808000'},
+						textStyle: {
+							color: '#000080' , 
+							fontSize: 13
+									}									
+						},
+			  //hAxis: {gridlines: {color: '#808000'}},
+			  vAxis: { 
+						title: 'Celsius degree',
+						minValue: 0,
+						textStyle: {
+							color: '#000080' , 
+							fontSize: 13
+									}
+						},
+			  explorer: {
+			  maxZoomOut:8,
+			  maxZoomIn: 0.01 ,
+			  zoomDelta: 0.5,	
+			  keepInBounds: false},
+			  lineWidth: 2, //Do day duong line
+			  legend: 'none',
+			  //backgroundColor: '#ffd7ff',  //Mau nen
+			 backgroundColor: "transparent",
+			 // hAxis: { minValue: 0, maxValue: count },
+              colors: ['#fd3e00'], //Mau line
+			  pointSize: 7, //Kich thuoc dau cham
+			  pointShape: { type: 'circle' }, //Kieu dau cham:circle,triangle,square,diamond,star,polygon.
+			  //Hieu ung khi ve moi
+			  displayAnnotations: true,
+			  animation:{
+			  duration: 500,
+			  easing: 'inAndOut',
+						},
+			};
+			dataTemperature = response.getDataTable();//Lay du lieu tu truy van
+			chartTemperature = new google.visualization.LineChart(document.getElementById('columnchart'));
+			chartTemperature.draw(dataTemperature, options);
+			
+			
+	}
+</script>
+</head>
+<body id="index" onload="drawChart();Pause();">
+<ul id="tabs">
+<li id="tab1"><a href="index.html">Home</a></li>
+</ul>
+	<table border="1">
+		<tr>  
+			<td>
+				<div id='columnchart' style="width: 800px; height: 400px;"></div>
+				<input 	type="image" 
+				src="images/Light_ON.png" 
+				name="submit" 
+				id = "btnLightOn"
+				style = "btnLightOnStyle"
+				/>	
+			</td>
+			<td>
+				<center>
+				<img src="https://dl.dropboxusercontent.com/u/23155150/Logo96x96.png" alt="Project Smart Home" style="width:80px;height:80px">
+				<br>
+				<font size="5" color="blue">
+				<strong>Project Smart Home<br>(Arduino, ESP8266)</strong>
+				</font>
+				<br><br><br><br><br><br>
+				<input 	type="image" 
+				src="https://dl.dropboxusercontent.com/u/23155150/play.png" 
+				name="submit" 
+				id = "ibtnRefresh"
+				style = "button_id"
+				onclick="Pause(); "
+				/>	
+				</center>
+			</td>
+		</tr>
+	</table>
+</body>
+</html>
