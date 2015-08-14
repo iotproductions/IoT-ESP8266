@@ -1,0 +1,1 @@
+Slide button: https://github.com/brielov/ios7-switches 
