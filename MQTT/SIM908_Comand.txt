@@ -1,0 +1,75 @@
+//----------------------------------------------------------------------------------------------------------------
+//Server CMD 
+2B524E43315332300D0A -> +RNC1S20<CR><LF> -> Get GPS
+2B524E43315332310D0A -> +RNC1S21<CR><LF> -> Reset MCU
+2B524E43315332320D0A -> +RNC1S22<CR><LF> -> Kiem tra tai khoan Chinh
+2B524E43315332330D0A -> +RNC1S23<CR><LF> -> Kiem tra tai khoan Phu
+//----------------------------------------------------------------------------------------------------------------
+//Received Bluetooth CMD 
+>>11_ID_DD_MM_YYYY_HH_MM_SS_+(-)_TT -> Frame Data(36 Bytes)
+>>12;; -> End frame
+>>310;; -> OFF SIM
+>>311;; -> ON SIM
+>>320;; -> OFF Speaker
+>>321;; -> ON Speaker
+>>33"xxxxxxxxxxxxx";; -> Lenh Nap tien
+>>341;; -> Lenh Kiem tra tai khoan chinh
+>>342;; -> Lenh Kiem tra tai khoan phu
+
+7E001017010013A20040D625FDFFFE024434057E
+//----------------------------------------------------------------------------------------------------------------
+//Send CMD to Bluetooth
+>>1;; -> Lenh yeu cau Bluetooth gui du lieu
+>>341%s;; -> Gui chuoi %s chua thong tin tai khoan Chinh qua Bluetooth
+>>342%s;; -> Gui chuoi %s chua thong tin tai khoan Phu qua Bluetooth
+>>33%s;;  -> Gui chuoi %s chua thong tin nap tien qua Bluetooth
+//----------------------------------------------------------------------------------------------------------------
+//Mot so Ket qua Kiem tra tai khoan
++CUSD: 0,"S30+. TKC:51 d, 18/07/2015. 
+KM3 10700 d.",64
++CUSD: 0,"S30+. TKC:1826 d, 27/07/2015. 
+Data 3 48 MB 133 KB,30/05/2015.",64
++CUSD: 0,"KM noi mang hang thang= 30000d.TK Free GPRS4= 128950Kb.",64
++CUSD: 0,"Ban dang dung goi cuoc HiSchool,ngay kich hoat 09/05/2015.TK goc 1 la 0 dong.",64
+//Nap tien sai ma so
+>>+CUSD: 0,"Ma so the cao khong hop le hoac da duoc su dung.Vui long kiem tra lai!",64;;
+//----------------------------------------------------------------------------------------------------------------
+//GPS AT Command	Description
+AT+CGPSPWR			điều khiển nguồn GPS
+AT+CGPSRST			đặt lại chế độ GPS(Hot/Warm/Cold)
+AT+CGPSINF			nhận thông tin vị trí GPS hiện tại
+AT+CGPSOUT			điều khiển dữ liệu ra NMEA GPS
+AT+CGPSSTATUS		Tình trạng GPS
+AT+CGPSIPR			set tốc độ baudrate
+//----------------------------------------------------------------------------------------------------------------
+//GPS AT Command Test
+AT+CGPSPWR=1
+AT+CGPSRST=0
+AT+CGPSRST=1
+AT+CGPSOUT=0
+AT+CGPSSTATUS?
+AT+CGPSINF=0
+//------------------------------------------------------------------------------------
+Sending a Google Maps link
+
+Now that we have received and converted the GPS position, we are ready to send an SMS with a link to GM. The link has the following format:
+
+http://maps.google.com/maps?q=<lat>,%28<message>%29&t=k&z=<zoom>
+http://maps.google.com/maps?q=9.59106501,106.21338207&t=k&z=36
+
+You can embed a message, which appears in the popup box. It is surrounded by encoded brackets. Further you can control the zoom factor and the type of map (k=satellite, m=map).
+
+9.59106501,106.21338207
+10621.320548,959.117618
+
+0,10621.322210,959.121489,42.503414,20150605031931.000,386,12,0.000000,0.000000
+OK
+http://maps.google.com/maps?q=9.984996,106.355490&t=m&z=36
+
+32,073456.000,A,959.121489,N,10621.322210,E,0.00,108.92,080615,,E,A
+$GPRMC,073456.000,A,959.121489,N,10621.322210,E,0.00,108.92,080615,,E,A*03
+
+$GPRMC,073456.000,A,959.117618,N,10621.320548,E,0.00,108.92,080615,,E,A*03
+
+0,0.000000,0.000000,0.000000,20150605031054.059,0,2,0.000000,0.000000
+//------------------------------------------------------------------------------------
