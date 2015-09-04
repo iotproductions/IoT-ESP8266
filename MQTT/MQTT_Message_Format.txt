@@ -1,0 +1,60 @@
+//*********************************************************************************************************************************************************
+//CONNECT Message package
+Hex: 104900064d514973647003c2001e002435623833376263632d353562352d343137642d393762352d33343830343963373863326300096c65655f7472696575000a74726965754031323334
+Ascii: I MQIsdpÂ  $5b837bcc-55b5-417d-97b5-348049c78c2c 	lee_trieu trieu@1234
+10 -> CONNECT Type
+49 -> Remaining Length(73 byte)
+0006 -> Length of protocol name 
+4d5149736470 -> Protocol: "MQIsdp"
+03 -> Protocol Version: MQTT Version 3
+c2 -> Flag header
+00 -> Keep alive timer(MSB): 0x00
+1e -> Keep alive timer(LSB): 0x1E <-> 30s
+0024 -> Length of Client ID: 0x0024 <-> 36 byte
+35623833376263632d353562352d343137642d393762352d333438303439633738633263 -> Client ID:5b837bcc-55b5-417d-97b5-348049c78c2c
+00 09 -> Length of username
+6c65655f7472696575 -> Username: lee_trieu
+00 0a -> Password length: 10 Byte
+74726965754031323334 -> Password: trieu@1234
+//*********************************************************************************************************************************************************
+Hex: 104c00064d514973647003c2001e002462383236373935392d353663622d343337662d386430662d666632363632643436643766000c74686f6e672e6e677579656e000a74686f6e674031323334
+Ascii:L MQIsdpÂ  $b8267959-56cb-437f-8d0f-ff2662d46d7f thong.nguyen thong@1234
+0x10 ->CONNECT Type
+0x4c: -> Remaining length(76 byte)
+0x0006: -> Length of protocol name 
+4d5149736470 -> Protocol: "MQIsdp"
+03 -> Protocol Version: MQTT Version 3
+c2 -> Flag header
+00 -> Keep alive timer(MSB): 0x00
+1e -> Keep alive timer(LSB): 0x1E <-> 30s
+0024 -> Length of Client ID: 0x0024 <-> 36 byte
+62383236373935392d353663622d343337662d386430662d666632363632643436643766 -> Client ID: b8267959-56cb-437f-8d0f-ff2662d46d7f
+00 0c -> Length of username: 12 Byte
+74686f6e672e6e677579656e -> Username: thong.nguyen 
+00 0a -> Password length: 10 Byte
+74686f6e674031323334 -> Password: thong@1234
+//*********************************************************************************************************************************************************
+//PUBLISH Message package
+3018000A57617465726D65746572537562736372696265204F4B
+310e000a57617465726d657465724f4b -> Gui "OK" len topic Watermeter
+Hex: 310e000a57617465726d657465724f4b
+Ascii: 1 WatermeterOK
+31 -> Message type =  3, Retain = 1							
+0e -> Remaining length: 0x0e <-> 15 Byte                    
+00 0a -> Length of Topic name: 0x00a <-> 10 byte
+57617465726d65746572 -> Topic name: "Watermeter"
+4f4b -> Message: "OK"
+//*********************************************************************************************************************************************************
+Remaining Length byte = byte3 + byte4 +....+ byte n: => Remaining byte = n - 2(byte);
+//*********************************************************************************************************************************************************
+//SUBSCRIBE Message package
+Hex: 820f0002000a57617465726d6574657200 -> Subscribe "Watermeter" Topic
+Ascii: ‚  Watermeter 
+82 -> Message type = 8, QoS = 1
+0f -> Remaining length : 15 byte
+0002 -> Message ID
+000a -> Topic Length
+57617465726d65746572 -> Name of Topic: "Watermeter"
+00 -> Reserverd: QoS level at which the clients wants to receive messages from the given topic. 
+//*********************************************************************************************************************************************************
+
