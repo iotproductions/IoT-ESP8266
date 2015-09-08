@@ -1,1 +1,29 @@
+int mqtt_subscribe(mqtt_broker_handle_t* broker, const char* topic) 
+{
+	uint16_t topiclen = strlen(topic);
+	// Variable header
+	uint8_t var_header[2]; // Message ID
+	var_header[0] = broker->seq>>8;
+	var_header[1] = broker->seq&0xFF;
+	broker->seq++;
+	// utf topic
+	char *utf_topic = (char*)malloc((topiclen+3)*sizeof(char)); // Topic size (2 bytes), utf-encoded topic, QoS byte
+	memset(utf_topic, 0, sizeof(utf_topic));
+	utf_topic[0] = topiclen>>8;
+	utf_topic[1] = topiclen&0xFF;
+	memcpy(utf_topic+2, topic, topiclen);
+	// Fixed header
+	uint8_t fixed_header[] = 
+	{
+		MQTT_MSG_SUBSCRIBE | MQTT_QOS1_FLAG, // Message Type, DUP flag, QoS level, Retain
+		sizeof(var_header)+(topiclen+3)
+	};
+	char packet[sizeof(var_header)+sizeof(fixed_header)+sizeof(utf_topic)];
+	memset(packet, 0, sizeof(packet));
+	memcpy(packet, fixed_header, sizeof(fixed_header));
+	memcpy(packet+sizeof(fixed_header), var_header, sizeof(var_header));
+	memcpy(packet+sizeof(fixed_header)+sizeof(var_header), utf_topic, (topiclen+3));
+	// Send the packet
 
+	return 1;
+}
