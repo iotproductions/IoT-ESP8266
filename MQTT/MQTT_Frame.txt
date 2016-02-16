@@ -1,3 +1,56 @@
 103000064d514973647003CA0258000A30393833333735373733000a4D5154545F52796E616E000a52796E616E4032303230 -> MQTT Connect
 321F0011572F37342F30312F373430313030303036000100000001000163000000 -> Publish topic W740100006
 821600010011572F37342F30312F37343031303030303600 -> Subcribe topic W740100006
+//----------------------------------------------------------------------------
+// MQTT CONNECT Message Frame
+//----------------------------------------------------------------------------
+Hex: 103000064d514973647003CA0258000A30393833333735373733000a4D5154545F52796E616E000a52796E616E4032303230
+Hex & Ascii: {10}0{00}{06}MQIsdp{03}C380{00}{00}{00}{0A}0982309813{00}{0A}MQTT_Rynan{00}{0A}Rynan@2020
+Package:
+10	-> Connect message
+30	-> Remainning length
+0006 -> Protocol Length
+4d5149736470  -> Protocol name: MQIsdp
+03 -> Protocol version
+CA	-> Flag 
+0258 -> Keep alive time
+000A -> CLient ID length
+30393833333735373733 -> Client ID
+000a -> Username length
+4D5154545F52796E616E -> User name
+000a -> Password length
+52796E616E4032303230 -> Password
+//----------------------------------------------------------------------------
+// MQTT PUBLISH Message Frame
+//----------------------------------------------------------------------------
+Hex: 321F0011572F37342F30312F373430313030303035000100000001000163000000
+Package:
+32 -> Publish mesages, QoS1, No retain 
+1F -> Remaining length 
+0011 -> Length of topic name
+572F37342F30312F373430313030303035 -> Topic name: W/74/01/740100005
+0001 -> Message ID(Only send with QoS1 or QoS2)
+00000001000163000000 -> Payload 10 bytes
+//----------------------------------------------------------------------------
+// MQTT SUBCRIBE Message Frame
+//----------------------------------------------------------------------------
+Hex: 821600010011572F37342F30312F37343031303030303500
+Package:
+82 -> Subcribe mesages, QoS1, No retain 
+16 -> Remaining length
+0001 -> Message ID
+0011 -> Topic length
+572F37342F30312F373430313030303035 -> Topic name: W/74/01/740100005
+00 -> Qos0
+//----------------------------------------------------------------------------
+// MQTT Set Sample Time for Topic W/74/01/740100006 
+//----------------------------------------------------------------------------
+Hex: 33260011572F37342F30312F37343031303030303600010D0A53414D504C452054494D457C330D0A
+33 -> Publish mesages, QoS1, Retain 
+26 -> Remaining length 
+0011 -> Length of topic name
+572F37342F30312F373430313030303036 -> Topic name: W/74/01/740100005
+0001 -> Message ID(Only send with QoS1 or QoS2)
+0D0A53414D504C452054494D457C330D0A -> Payload 17 bytes: {0D}{0A}SAMPLE TIME|3{0D}{0A}
+
+
