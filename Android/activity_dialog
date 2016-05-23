@@ -1,0 +1,32 @@
+		final Dialog noti_dlg = new Dialog(this);
+		LayoutInflater inflater = getLayoutInflater();
+		View notification_dlg = (View) inflater.inflate(R.layout._sml0_2_alert_notification, null);
+		TextView msg = (TextView) notification_dlg.findViewById(R.id.inform_alert);
+		msg.setText(strNotify);
+
+		Button bt_ok = (Button) notification_dlg.findViewById(R.id.bt_ok);
+		bt_ok.setText("EXIT");
+		bt_ok.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v)
+			{								
+				noti_dlg.dismiss();
+			}
+		});
+
+		Button bt_cancel = (Button) notification_dlg.findViewById(R.id.bt_cancel);
+		bt_cancel.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				noti_dlg.dismiss();
+			}
+		});
+
+		noti_dlg.requestWindowFeature(Window.FEATURE_NO_TITLE);
+		noti_dlg.setCanceledOnTouchOutside(false);
+		noti_dlg.setContentView(notification_dlg);
+		noti_dlg.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+		noti_dlg.getWindow().getAttributes().windowAnimations = R.style.dialog_animation_move_from_down;
+		noti_dlg.show();
