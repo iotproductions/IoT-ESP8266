@@ -1,3 +1,1 @@
 http://neilkolban.com/tech/wp-content/uploads/2015/08/The-ESP8266-Book-August-2015.pdf
-
-mongodb://anhung.trinh:ServerAt100AtDBAt2015@192.168.200.21:27017,192.168.200.23:27017,192.168.200.24:27017,192.168.200.33:27017/MEKONGDB?connectTimeoutMS=100000&authMechanism=SCRAM-SHA-1&replicaSet=RYNAN_RS_CENTER&readPreference=primaryPreferred
