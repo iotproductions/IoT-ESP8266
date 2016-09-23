@@ -6,3 +6,5 @@ http://neilkolban.com/tech/wp-content/uploads/2015/08/The-ESP8266-Book-August-20
 ps 
 -> Search MJPG process 
 kill -9 process_id
+
+121 433 765
