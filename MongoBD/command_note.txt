@@ -1,0 +1,3 @@
+sudo mongod => Start mongoDB
+
+sudo killall -15 mongod   => Kill mongod
