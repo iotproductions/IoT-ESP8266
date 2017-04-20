@@ -1,0 +1,13 @@
+
+192.168.4.1/rpc/Config.Get
+
+192.168.4.1/rpc/Config.Set
+{"config":{"wifi":{"ap":{"enable": true}, "sta":{"enable":true, "ssid": "TECHNICAL01", pass: "test@2020"}}}}
+
+192.168.4.1/rpc/Config.Set
+{"config":{"wifi":{"ap":{"enable": true}, "sta":{"enable":true, "ssid": "BASEMENT01", pass: "test@2020"}}}}
+
+192.168.4.1/rpc/Sys.Reboot
+{
+  "delay_ms": 0
+}
