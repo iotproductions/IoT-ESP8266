@@ -37,10 +37,7 @@ function getWifiConfig() {
 	var data = "";
 	xhr.send(data);
 }
-
 function setWifiConfig() {
-	console.log(document.getElementById("id_config_sta_ssid").value);
-	console.log(document.getElementById("id_config_sta_pass").value);
 	xhr = new XMLHttpRequest();
 	var url = "/rpc/Config.Set";
 	xhr.open("POST", url, true);
@@ -50,7 +47,9 @@ function setWifiConfig() {
 			console.log("Set success !");
 		}
 	}
-	var obj = {"config":{"wifi":{"ap":{"enable": true}, "sta":{"enable":true, "ssid": "Technical_Group", pass: "mylangroup"}}}};
+	var obj = {"config":{"wifi":{"ap":{"enable": true}, "sta":{"enable":true, "ssid": "ssid_name", pass: "mylangroup"}}}};
+	obj.config.wifi.sta.ssid = document.getElementById("id_config_sta_ssid").value;
+	obj.config.wifi.sta.pass = document.getElementById("id_config_sta_pass").value;
 	var myJSON = JSON.stringify(obj);
 	console.log(myJSON);
 	xhr.send(myJSON);
