@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <body onload="getWifiConfig()"> 
@@ -63,6 +64,7 @@ var url = "/rpc/Sys.GetInfo";
 xhr.open("POST", url, true);
 xhr.onreadystatechange=function(){ 
 if (xhr.readyState == 4 && xhr.status == 200){var json = JSON.parse(xhr.responseText);
+console.log(json);
 document.getElementById("id_sta_ip").textContent=(json.wifi.sta_ip);}}
 var str_request ="";
 var data = JSON.stringify(str_request);
