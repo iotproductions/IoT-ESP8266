@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<body onload="getStatus()"> 
+<h1>Smart Socket Config</h1>
+<h3>Control Panel</h3><hr>
+<input type="button" onclick="setStatus(0)" value="ON">
+<input type="button" onclick="setStatus(1)" value="OFF">
+Current Satus: <span  id="id_led_status"></span><br>
+<script>
+function getStatus() 
+{
+	xhr = new XMLHttpRequest();
+	var url = "rpc/get_status";
+	xhr.open("POST", url, true);
+	xhr.onreadystatechange = function () { 
+		if (xhr.readyState == 4 && xhr.status == 200) {
+		var json = JSON.parse(xhr.responseText);
+		console.log(json);
+		document.getElementById("id_led_status").textContent  = (json.state);
+		}
+	}
+	var obj = {"get":1};
+	var myJSON = JSON.stringify(obj);
+	xhr.send(myJSON);
+}
+function setStatus(state) 
+{
+	xhr = new XMLHttpRequest();
+	var url = "rpc/set_status";
+	xhr.open("POST", url, true);
+	xhr.onreadystatechange = function () { 
+		if (xhr.readyState == 4 && xhr.status == 200) {
+		var json = JSON.parse(xhr.responseText);
+		console.log(json);
+		getStatus();
+		}
+	}
+	var obj;
+	if(state === 1)
+	 obj = {"state":1};
+	 else
+	 obj = {"state":0};
+	var myJSON = JSON.stringify(obj);
+	xhr.send(myJSON);
+}
+</script>
+</body>
+</html>
