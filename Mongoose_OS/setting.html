@@ -1,0 +1,173 @@
+
+<!DOCTYPE html>
+<html>
+<script src="ajax.js"></script>
+<script src="razax.js"></script>
+<script>
+function getWifiConfig(){
+	nanoajax.ajax({url:'/rpc/Config.Get'}, function (code, responseText) {
+		if(code == 200){
+			console.log(responseText);
+			var json = JSON.parse(responseText);
+			document.getElementById("id_ap_ssid").textContent  	= (json.wifi.ap.ssid);
+			document.getElementById("id_ap_pass").textContent  	= (json.wifi.ap.pass);
+			document.getElementById("id_ap_ip").textContent  	= (json.wifi.ap.ip);
+			document.getElementById("id_sta_ssid").textContent  = (json.wifi.sta.ssid);
+			document.getElementById("id_sta_pass").textContent  = (json.wifi.sta.pass);
+			getStationIP();
+		}
+	});
+}
+function getStationIP(){
+	nanoajax.ajax({url:'/rpc/Sys.GetInfo'}, function (code, responseText) {
+		if(code == 200){
+			console.log(responseText);
+			var json = JSON.parse(responseText);
+			document.getElementById("id_sta_ip").textContent=(json.wifi.sta_ip);
+		}
+	});
+}
+function applyWifiConfig(){
+	var obj = {"config":{"wifi":{"ap":{"enable": true, "ssid": "ap_ssid", "pass": "ap_pass"}, "sta":{"enable":true, "ssid": "sta_ssid", "pass": "sta_pass"}}}};
+	obj.config.wifi.sta.ssid 	= document.getElementById("id_config_sta_ssid").value;
+	obj.config.wifi.sta.pass 	= document.getElementById("id_config_sta_pass").value;
+	obj.config.wifi.ap.ssid 	= document.getElementById("id_config_ap_ssid").value;
+	obj.config.wifi.ap.pass 	= document.getElementById("id_config_ap_pass").value;
+	fetch('/rpc/Config.Set', {
+	  method: 'post',
+	  headers: {
+		'Accept': 'application/json',
+		'Content-Type': 'application/json'
+	  },
+	  body: JSON.stringify(obj)
+	})
+	.then(function(response) {
+	  if (response.status >= 200 && response.status < 300) {
+	  if(response.status == 200)
+		alert("Apply Success !");
+		return response.status;
+	  }
+	  throw new Error(response.statusText)
+	})
+	.then(function(json) {
+	  console.log(json);
+	})
+}
+function saveWifiConfig(){
+	alert("Save");
+	fetch('/rpc/Config.Save', {
+	  method: 'post',
+	  headers: {
+		'Accept': 'application/json',
+		'Content-Type': 'application/json'
+	  },
+	  body: JSON.stringify(null)
+	})
+	.then(function(response) {
+	  if (response.status >= 200 && response.status < 300) {
+		return response.json()
+	  }
+	  throw new Error(response.statusText)
+	})
+	.then(function(json) {
+	  console.log(json);
+	})
+}function rebootDevice(){
+	nanoajax.ajax({url:'/rpc/Sys.Reboot'}, function (code, responseText) {
+		if(code == 200){
+			console.log(responseText);
+		}
+	});
+}
+</script><body onload="getWifiConfig()"> 
+<link rel="stylesheet" href="style.css">
+<button class="button-secondary pure-button" onclick="location.href='/'">Home</button>
+<h1>Smart Plug Config</h1><hr>
+<p><strong>Access Point Mode</strong></p>
+<form class="pure-form pure-form-aligned">
+    <fieldset>
+        <div class="pure-control-group">
+            <label for="name">SSID:</label>
+			<span  id="id_ap_ssid"></span><br>
+        </div>
+        <div class="pure-control-group">
+            <label for="password">Password:</label>
+			<span  id="id_ap_pass"></span>
+        </div>
+		<div class="pure-control-group">
+            <label for="ip">IP:</label>
+			<span  id="id_ap_ip"></span>
+        </div>
+    </fieldset>
+</form>
+<p><strong>Station Mode</strong></p>
+<form class="pure-form pure-form-aligned">
+    <fieldset>
+        <div class="pure-control-group">
+            <label for="name">SSID:</label>
+			<span  id="id_sta_ssid"></span><br>
+        </div>
+        <div class="pure-control-group">
+            <label for="password">Password:</label>
+			<span  id="id_sta_pass"></span><br>
+        </div>
+		<div class="pure-control-group">
+            <label for="password">IP:</label>
+			<span  id="id_sta_ip"></span><br>
+        </div>
+    </fieldset>
+</form>
+<hr><p><strong>Config Access Point</strong></p>
+<form class="pure-form pure-form-aligned">
+    <fieldset>
+        <div class="pure-control-group">
+            <label for="name">SSID</label>
+            <input id="id_config_ap_ssid" type="text" placeholder="Type AP SSID" required>
+        </div>
+        <div class="pure-control-group">
+            <label for="password">Password</label>
+            <input id="id_config_ap_pass" type="password" placeholder="Type AP Password" required>
+        </div>
+    </fieldset>
+</form>
+<p><strong>Config Station</strong></p>
+<form class="pure-form pure-form-aligned">
+    <fieldset>
+        <div class="pure-control-group">
+            <label for="name">SSID</label>
+            <input id="id_config_sta_ssid" type="text" placeholder="Type STA SSID">
+        </div>
+        <div class="pure-control-group">
+            <label for="password">Password</label>
+            <input id="id_config_sta_pass" type="password" placeholder="Type STA Password">
+        </div>
+		<div class="pure-controls">
+		   <button id="btn_id_secondary" class="button-secondary pure-button" onclick="applyWifiConfig()">Apply</button>
+		   <button id="btn_id_success"class="button-success pure-button" onclick="saveWifiConfig()">Save</button>
+		   <button id="btn_id_pure" class="button-error pure-button" onclick="rebootDevice()">Reboot</button>
+        </div>
+    </fieldset>
+</form><style scoped>
+        .button-success,
+        .button-error,
+        .button-warning,
+        .button-secondary {
+            color: white;
+            border-radius: 4px;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+        }
+        .button-success {
+            background: rgb(28, 184, 65);
+        }
+        .button-error {
+            background: rgb(202, 60, 60); 
+        }
+        .button-warning {
+            background: rgb(223, 117, 20);
+        }
+        .button-secondary {
+            background: rgb(66, 184, 221);
+		}
+</style>
+</body>
+</html>
