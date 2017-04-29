@@ -1,0 +1,115 @@
+
+
+<!DOCTYPE html>
+<html>
+<body onload="getStatus()">
+<link rel="stylesheet" href="style.css">
+ <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<button class="button-secondary pure-button" onclick="location.href='/setting.html'">Setting</button>
+<h1>Smart Plug</h1>
+<h3>Control Panel</h3><hr>
+<label for="id_led_status">Current Satus: </label>
+<span id="id_led_status"></span><br>
+<script>
+var led_red_state;
+var led_green_state;
+var led_blue_state;
+var led_status_state;
+function getStatus()
+{
+xhr = new XMLHttpRequest();
+var url = "rpc/get_status";
+xhr.open("POST", url, true);
+xhr.onreadystatechange = function () {
+if (xhr.readyState == 4 && xhr.status == 200) {
+var json = JSON.parse(xhr.responseText);
+console.log(json);
+if((json.state) === 1)
+{
+document.getElementById("id_led_status").textContent = "OFF";
+document.getElementById("id_led_status").style.color = "blue";
+}
+else
+{
+document.getElementById("id_led_status").textContent = "ON";
+document.getElementById("id_led_status").style.color = "red";
+}
+}
+}
+var obj = {"get":1};
+var myJSON = JSON.stringify(obj);
+xhr.send(myJSON);
+}
+function setPin(pin,state)
+{
+xhr = new XMLHttpRequest();
+var url = "rpc/set_gpio";
+xhr.open("POST", url, true);
+xhr.onreadystatechange = function () {
+if (xhr.readyState == 4 && xhr.status == 200) {
+var json = JSON.parse(xhr.responseText);
+console.log(json);
+getStatus();
+}
+}
+var obj;
+obj = {"pin": pin, "state": state};
+console.log(obj);
+var myJSON = JSON.stringify(obj);
+xhr.send(myJSON);
+}
+function clickHandle(obj)
+{
+console.log(obj.id);
+switch(obj.id)
+{
+case "btn_id_success":
+led_green_state = (led_green_state ? 0 : 1);
+setPin(12,led_green_state);
+break;
+case "btn_id_pure":
+led_red_state = (led_red_state ? 0 : 1);
+setPin(15,led_red_state);
+break;
+case "btn_id_warning":
+led_status_state = (led_status_state ? 0 : 1);
+setPin(2,led_status_state);
+break;
+case "btn_id_secondary":
+led_blue_state = (led_blue_state ? 0 : 1);
+setPin(13,led_blue_state);
+break;
+};
+}
+</script><div>
+<style scoped>
+.button-success,
+.button-error,
+.button-warning,
+.button-secondary {
+color: white;
+border-radius: 4px;
+text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+.button-success {
+background: rgb(28, 184, 65);
+}
+.button-error {
+background: rgb(202, 60, 60);
+}
+.button-warning {
+background: rgb(223, 117, 20);
+}
+.button-secondary {
+background: rgb(66, 184, 221);
+}
+</style>
+<button id="btn_id_success"class="button-success pure-button" onclick="clickHandle(this)">ON</button>
+<button id="btn_id_pure" class="button-error pure-button" onclick="clickHandle(this)">OFF</button>
+<button id="btn_id_warning" class="button-warning pure-button" onclick="clickHandle(this)">FAN</button>
+<button id="btn_id_secondary" class="button-secondary pure-button" onclick="clickHandle(this)">TV</button>
+</div>
+</body>
+</html>
