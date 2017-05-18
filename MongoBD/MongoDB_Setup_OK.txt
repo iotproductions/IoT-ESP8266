@@ -14,3 +14,7 @@ start mongodb service:
 sudo service start mongodb
 stop mongodb service:
  sudo service mongodb stop
+
+
+Start DB
+pi@raspberrypi:~ $ sudo mongod --dbpath /var/lib/mongodb
