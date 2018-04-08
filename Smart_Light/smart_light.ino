@@ -217,7 +217,7 @@
 				}
 			}
 			memset(response_message,0x00,100);
-			snprintf(response_message,100,"OK:TURN ON|%ld",pin);
+			snprintf(response_message,100,"OK:TURN OFF|%ld",pin);
 			client.publish(device_serial,response_message);
 		}
 		else if(memcmp(payload, "GET ADC", 7) == 0)
