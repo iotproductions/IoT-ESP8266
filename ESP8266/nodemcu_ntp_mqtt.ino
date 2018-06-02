@@ -213,8 +213,9 @@ void loop()
 		++value;
 		
 		String time;
-		time.concat(hour()); time.concat(":"); time.concat(minute()); time.concat(":"); time.concat(second()); time.concat(" ");
-		time.concat(day()); time.concat("."); time.concat(month()); time.concat("."); time.concat(year());
+		time.concat(day()); time.concat("-"); time.concat(month()); time.concat("-"); time.concat(year());time.concat(" ");
+		time.concat(hour()); time.concat(":"); time.concat(minute()); time.concat(":"); time.concat(second()); 
+		
 		Serial.println(time);
 		if(year() < 2000)
 		{
