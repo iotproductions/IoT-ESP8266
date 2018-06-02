@@ -14,30 +14,25 @@
 #include <time.h>
 #include <stdint.h>
 #include <PubSubClient.h>
-#include <RGBLED.h>
-#include <WS2812FX.h>
 #include <EEPROM.h>
-#include <SimpleDHT.h>
 #include <SimpleTimer.h>
+#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
+#include <ArduinoJson.h>
+#include <WiFiUdp.h>
+#include <Time.h>
+#include <TimeLib.h>
+#include <NtpClientLib.h>
 //-------------------------------------------------------------------------
 // Defines
 //-------------------------------------------------------------------------
-#define PIN_LDR_SENSOR                 3  
 #define PIN_STATUS_LED                 2
-#define PIN_MODE_BUTTON                4  
-#define PIN_LED_RED                    15
-#define PIN_RELAY                      12
-#define PIN_LED_BLUE                   2
+#define PIN_MODE_BUTTON                5  
 #define DEVICE_SERIAL_LEN              15
 #define LED_ON() digitalWrite(PIN_STATUS_LED, HIGH)
 #define LED_OFF() digitalWrite(PIN_STATUS_LED, LOW)
 #define LED_TOGGLE() digitalWrite(PIN_STATUS_LED, digitalRead(PIN_STATUS_LED) ^ 0x01)
-#define TOGGLE_LED_RED() digitalWrite(PIN_LED_RED, digitalRead(PIN_LED_RED) ^ 0x01)
 #define LED_COUNT 4
 #define LED_PIN   5
-#define DEFAULT_BRIGHTNESS             255
-#define DEFAULT_SPEED                  1000
-#define DEFAULT_MODE                   FX_MODE_RAINBOW_CYCLE 
 // MQTT Variables
 #define MQTT_PAYLOAD_LEN               40
 #define MQTT_PUBLISH_BUFF_LEN          100
@@ -59,12 +54,6 @@
 //-------------------------------------------------------------------------
 // Global variables
 //-------------------------------------------------------------------------
-// for DHT11, 
-//      VCC: 5V or 3V
-//      GND: GND
-//      DATA: 14
-int pinDHT11 = 14;
-SimpleDHT11 dht11;
 // the timer object
 SimpleTimer timer;
 Ticker ticker;
@@ -98,6 +87,79 @@ bool device_auto_off_mode;            // Device auto OFF mode
 uint8_t device_auto_off_hour;            // Device auto OFF hour
 uint8_t device_auto_off_minute;          // Device auto OFF minute
 uint8_t device_color_effect_mode;        // Device color effect mode
+DynamicJsonBuffer jsonBuffer(100);
+char jsonString[200];
+WiFiManager wifiManager;
+
+// Declare UDP Object
+static const char ntpServerName[] = "time.nist.gov";  		// NTP Server name
+static const int 	timeZone = 7; 													// Time zone: GMT+7
+WiFiUDP Udp;
+uint16_t localPort; 
+tmElements_t tm,last_min; 
+bool got_ntp_time_ok = false;
+IPAddress timeServerIP;						 	// time.nist.gov NTP server address
+		
+//-------------------------------------------------------------------------
+// Function prototype
+//-------------------------------------------------------------------------
+void sendNTPpacket(IPAddress &address);
+time_t getNtpTime();
+/*-------- NTP code ----------*/
+const int NTP_PACKET_SIZE = 48; 			// NTP time is in the first 48 bytes of message
+byte packetBuffer[NTP_PACKET_SIZE]; 	// buffer to hold incoming & outgoing packets
+time_t getNtpTime()
+{
+	while (Udp.parsePacket() > 0) ; 		// discard any previously received packets
+	Serial.print(("Transmit NTP Request "));
+	//get a random server from the pool
+	WiFi.hostByName(ntpServerName, timeServerIP);
+	Serial.println(timeServerIP);
+
+	sendNTPpacket(timeServerIP);
+	uint32_t beginWait = millis();
+	while((millis() - beginWait) < 2000) 
+	{
+		int size = Udp.parsePacket();
+		if (size >= NTP_PACKET_SIZE) {
+			Serial.println(("Receive NTP Response"));
+			Udp.read(packetBuffer, NTP_PACKET_SIZE);  // read packet into the buffer
+			unsigned long secsSince1900;
+			// convert four bytes starting at location 40 to a long integer
+			secsSince1900 =  (unsigned long)packetBuffer[40] << 24;
+			secsSince1900 |= (unsigned long)packetBuffer[41] << 16;
+			secsSince1900 |= (unsigned long)packetBuffer[42] << 8;
+			secsSince1900 |= (unsigned long)packetBuffer[43];
+			got_ntp_time_ok = true;
+			return secsSince1900 - 2208988800UL + (timeZone * SECS_PER_HOUR);
+		}
+	}
+	Serial.println(("No NTP Response :-("));
+	setSyncProvider(getNtpTime);
+	return 0; // return 0 if unable to get the time
+}
+// send an NTP request to the time server at the given address
+void sendNTPpacket(IPAddress &address)
+{
+	// set all bytes in the buffer to 0
+	memset(packetBuffer, 0, NTP_PACKET_SIZE);
+	// Initialize values needed to form NTP request
+	// (see URL above for details on the packets)
+	packetBuffer[0] = 0b11100011;   // LI, Version, Mode
+	packetBuffer[1] = 0;     				// Stratum, or type of clock
+	packetBuffer[2] = 6;     				// Polling Interval
+	packetBuffer[3] = 0xEC;  				// Peer Clock Precision
+	// 8 bytes of zero for Root Delay & Root Dispersion
+	packetBuffer[12]  = 49;
+	packetBuffer[13]  = 0x4E;
+	packetBuffer[14]  = 49;
+	packetBuffer[15]  = 52;
+	// all NTP fields have been given values, now
+	// you can send a packet requesting a timestamp:
+	Udp.beginPacket(address, 123); //NTP requests are to port 123
+	Udp.write(packetBuffer, NTP_PACKET_SIZE);
+	Udp.endPacket();
+}
 //-------------------------------------------------------------------------
 // Setup function
 //-------------------------------------------------------------------------
@@ -106,18 +168,19 @@ void setup()
   Serial.begin(115200);
   Serial.setDebugOutput(true);
   pinMode(PIN_STATUS_LED, OUTPUT);
-  pinMode(PIN_LED_RED, OUTPUT);
-  pinMode(PIN_RELAY, OUTPUT);
-  pinMode(PIN_LED_BLUE, OUTPUT);
   pinMode(PIN_MODE_BUTTON, INPUT);
-  pinMode(PIN_LDR_SENSOR, INPUT);
   ticker.attach(1, blink_status_led);
-  timer.setInterval(2000, read_dht11_sensor); // Read DHT11 every 2s
   client.setServer(mqtt_server, 1883);
   client.setCallback(MQTT_Callback);
   Serial.println("\r\nConfig device success !");
+
+  snprintf (msg, 150, "CPU Frequency: %d",ESP.getCpuFreqMHz());
+  Serial.println(msg);
   // Read data from EEPROM
   EEPROM.begin(512);
+  //reset saved settings
+  //wifiManager.resetSettings();
+	
 }
 //-------------------------------------------------------------------------
 // Main program
@@ -126,6 +189,7 @@ void loop()
 {
   if (mode_button_press()) 
   {
+  Serial.printf("Wi-Fi mode set to WIFI_STA %s\n", WiFi.mode(WIFI_STA) ? "" : "Failed!");
   enter_smart_config();
   Serial.println("Enter smartconfig");
   }
@@ -143,17 +207,36 @@ void loop()
     }
     client.loop();
     long now = millis();
-    if (now - lastMsg > 300000) 
+    if (now - lastMsg > 60000) 
     {
-    lastMsg = now;
-    ++value;
-    //snprintf (msg, 150, "Published message: #%ld, Temperature: %d, Humidity: %d", value,(int)temperature,(int)humidity);
-    snprintf (msg, 150, "{\"message_id\": %d, \"temperature\": %d ,\"humidity\": %d}",value,(int)temperature,(int)humidity);
-    
-  
-  Serial.print("Publish message: ");
-    Serial.println(msg);
-    client.publish(device_serial, msg);
+		lastMsg = now;
+		++value;
+		
+		String time;
+		time.concat(hour()); time.concat(":"); time.concat(minute()); time.concat(":"); time.concat(second()); time.concat(" ");
+		time.concat(day()); time.concat("."); time.concat(month()); time.concat("."); time.concat(year());
+		Serial.println(time);
+		if(year() < 2000)
+		{
+			Serial.println(year());
+			setSyncProvider(getNtpTime);
+		}
+		else
+		{
+			//snprintf (msg, 150, "Published message: #%ld, Temperature: %d, Humidity: %d", value,(int)temperature,(int)humidity);
+			//snprintf (msg, 150, "{\"message_id\": %d, \"temperature\": %d ,\"humidity\": %d}",value,(int)temperature,(int)humidity);
+			char jsonString[200];
+			JsonObject& root = jsonBuffer.createObject();
+			root["message_id"] = value;
+			root["created_time"] = time;
+			root["temperature"] = (int)temperature;
+			root["humidity"] = (int)humidity;
+			root.printTo(jsonString);
+
+			Serial.print("Publish message: ");
+			Serial.println(jsonString);
+			client.publish(device_serial, jsonString);
+		}
     }
   }
 //  else
@@ -163,6 +246,43 @@ void loop()
 //  }
   // Timer running
   timer.run();
+  
+  if(got_ntp_time_ok)
+  { 
+	got_ntp_time_ok = false;
+	now(); // store the current time in time variable t
+	Serial.println("=> Set time for system !"); 
+  }
+  
+  /*
+	if(!got_ntp_time_ok)
+	{
+		static time_t prevDisplay = 0; 		// when the digital clock was displayed
+		
+		timeStatus_t ts = timeStatus();
+		switch (ts) {
+		case timeNeedsSync:
+		case timeSet:
+			if(now() != prevDisplay) 				// update the display only if time has changed
+			{ 
+				prevDisplay = now();
+				//digitalClockDisplay();
+				if (ts == timeNeedsSync) 
+				{
+					Serial.println(("time needs sync"));
+				}
+			}
+			break;
+		case timeNotSet:
+			//Serial.println(("Time not set"));
+			//now();
+			//ESP.reset();
+			break;
+		default:
+			break;
+		}
+	}
+	*/
 }
 //-------------------------------------------------------------------------
 // Enter Smart Config 
@@ -211,23 +331,6 @@ void blink_status_led(void)
   digitalWrite(PIN_STATUS_LED, !state);     // set pin to the opposite state
 }
 //-------------------------------------------------------------------------
-// Read DHT11 Sensor
-//-------------------------------------------------------------------------
-void read_dht11_sensor(void)
-{
-  // read without samples.
-  int err = SimpleDHTErrSuccess;
-  if ((err = dht11.read(pinDHT11, &temperature, &humidity, NULL)) != SimpleDHTErrSuccess)
-  {
-    Serial.print("Read DHT11 failed, err="); Serial.println(err);
-  delay(1000);
-    return;
-  }
-  Serial.print("Sample OK: ");
-  Serial.print((int)temperature); Serial.print(" *C, "); 
-  Serial.print((int)humidity); Serial.println(" H");
-}
-//-------------------------------------------------------------------------
 // Turn ON Device
 //-------------------------------------------------------------------------
 void turn_on_device(void)
@@ -236,7 +339,7 @@ void turn_on_device(void)
   Serial.print(device_current_mode);
   Serial.print("]\r\n");
   // Turn Device ON
-  digitalWrite(PIN_RELAY, HIGH);
+  //digitalWrite(PIN_RELAY, HIGH);
 }
 //-------------------------------------------------------------------------
 // Turn OFF Device
@@ -247,7 +350,7 @@ void turn_off_device(void)
   Serial.print(device_current_mode);
   Serial.print("]\r\n");
   // Turn Device OFF
-  digitalWrite(PIN_RELAY, LOW);
+  //digitalWrite(PIN_RELAY, LOW);
 }
 //-------------------------------------------------------------------------
 // Change color of device
@@ -391,27 +494,45 @@ void MQTT_Reconnect()
   // Loop until we're reconnected
   while (!client.connected()) 
   {
-  Serial.print("Attempting MQTT connection...");
-  // Create a random client ID
-  String clientId = device_serial;
-  clientId += String(random(0xffff), HEX);
-  // Attempt to connect
-  if (client.connect(clientId.c_str(),mqtt_user_name,mqtt_password)) 
-  {
-    Serial.println("connected");
-    // Once connected, publish an announcement...
-    client.publish("outTopic", "hello world");
-    // ... and resubscribe
-    client.subscribe(device_serial);
-  } 
-  else 
-  {
-    Serial.print("failed, rc=");
-    Serial.print(client.state());
-    Serial.println(" try again in 5 seconds");
-    // Wait 5 seconds before retrying
-    delay(5000);
-  }
+	  Serial.print("Attempting MQTT connection...");
+	  // Create a random client ID
+	  String clientId = device_serial;
+	  clientId += String(random(0xffff), HEX);
+	  // Attempt to connect
+	  if (client.connect(clientId.c_str(),mqtt_user_name,mqtt_password)) 
+	  {
+		Serial.println("connected");
+		// Once connected, publish an announcement...
+		client.publish(device_serial, "Smart Light Connected !");
+		// ... and resubscribe
+		client.subscribe(device_serial);
+		got_ntp_time_ok = false; // Tat co nay de gui lenh dong bo thoi gian
+		if(! got_ntp_time_ok)
+		{
+			WiFi.hostByName(ntpServerName, timeServerIP);
+			// Seed random with values unique to this device
+			uint8_t macAddr[6];
+			WiFi.macAddress(macAddr);
+			uint32_t seed1 = (macAddr[5] << 24) | (macAddr[4] << 16) |(macAddr[3] << 8)  | macAddr[2];
+			randomSeed(WiFi.localIP() + seed1 + micros());
+			localPort = random(1024, 65535);
+			Serial.println(("Starting UDP"));
+			Udp.begin(localPort);
+			Serial.print(("Local port: "));
+			Serial.println(Udp.localPort());
+			Serial.println(("waiting for sync"));
+			setSyncProvider(getNtpTime);
+			setSyncInterval(1 * 60); // Sync every 1 min
+		}
+	  } 
+	  else 
+	  {
+		Serial.print("failed, rc=");
+		Serial.print(client.state());
+		Serial.println(" try again in 5 seconds");
+		// Wait 5 seconds before retrying
+		delay(5000);
+	  }
   }
 }
 //-------------------------------------------------------------------------
@@ -437,4 +558,3 @@ uint32_t string2number(char *str_buff)
 //-------------------------------------------------------------------------
 // End of file
 //-------------------------------------------------------------------------
-
